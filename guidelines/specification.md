@@ -13,13 +13,15 @@ The request SHALL have an empty body.
 
 ### Response
 
-The service MUST return an HTTP response with a status code of 200 and an empty body.
+The service MUST return an HTTP response with a status code of 200 and an empty
+body.
 
 ## PUT `/view`
 
 A list of all known nodes and views. For the purpose of assignment 1, there will
-always be only one shard and one node within that one shard. For future
-assignments, this request will become more useful.
+always be only one shard and one replica within that one shard. For future
+assignments, this request will become more useful and these terms will be
+defined.
 
 ### Request
 
@@ -30,17 +32,14 @@ The HTTP request SHALL have the following HTTP headers:
 
 The body of the request SHALL be JSON in the following format:
 
-```json 
-{
-  "defaultShard": [ {"address": "196.168.0.1:8081", "id": 1} ] 
-}
-```
+```json { "defaultShard": [ {"address": "196.168.0.1:8081", "id": 1} ] } ```
 
 Please note that the "id" field is an integer, not a string.
 
 ### Response
 
-The service MUST return an HTTP response with a status code of 200 and an empty body.
+The service MUST return an HTTP response with a status code of 200 and an empty
+body.
 
 ## PUT `/data/{key}`
 
@@ -55,10 +54,11 @@ content SHALL be ASCII text. ### Parameters
 
 ### Response
 
-The response MUST only be sent once the body content has been durably stored
-under the specified `key`. The response status code MUST be a 200 and the service
-MUST reply within a timely manner (at most five seconds). Once a PUT request is
-replied to it is considered acknowledged.
+The response MUST only be sent once the body content has been stored under the
+specified `key` so that future GET requests will return the value. The response
+status code MUST be a 200 and the service MUST reply within a timely manner (at
+most five seconds). Once the response to a PUT request has been sent it is considered
+acknowledged.
 
 ## GET `/data/{key}`
 
