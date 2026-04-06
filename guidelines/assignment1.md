@@ -1,4 +1,4 @@
-# Assignment 1: Echo Server
+# Assignment 1: Key/Value Store
 Due at 09:50 AM on 2026-04-14.
 
 The goal of this assignment is to write an HTTP server which follows the [specification](./specification.md) which specifies a key/value store. For this assignment, only one server will be run.
