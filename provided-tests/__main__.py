@@ -24,7 +24,7 @@ from utils.util import Logger, global_logger, log
 from .tests.hello import hello_cluster
 from .tests.put_and_get import put_and_get
 from .tests.update import update
-from .utils.containers import CONTAINER_ENGINE, ClusterConductor, ContainerBuilder
+from .utils.containers import ClusterConductor, ContainerBuilder
 
 # test functions
 # TODO: for parallel test runs, use generated group id
