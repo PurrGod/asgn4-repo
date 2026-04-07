@@ -25,14 +25,15 @@ Then run the following locally:
 git clone git@git.ucsc.edu:cse138/winter26-assignments.git 
 # renames the origin "remote" (this repository) to be called "upstream" 
 git remote rename origin upstream 
-# your newly created empty repository on git.ucsc.edu
-git remote add origin GROUP_REPO_LINK
+# your newly created empty repository's ssh address on git.ucsc.edu
+git remote add origin YOUR_REPO_LINK
 # makes your GROUP_REPO_LINK the repository you're pushing to
 git push --set-upstream origin --all
 ```
 
 If you follow the above setup then you'll be able to easily fetch updates to this
-repository by simply running: 
+repository by simply running:
+
 ```sh 
 git rebase upstream/main 
 ```
@@ -71,17 +72,17 @@ source .venv/bin/activate
 python -m pip install -r provided-tests/requirements.txt 
 ```
 
+Note: If you're on MacOS you might need to use the `python3` command instead of
+the `python` command.
+
 To run the test do the following:
 
 ```sh 
 # if this hasn't been run in the terminal session thus far 
 source .venv/bin/activate 
 # you can also do ENGINE=podman if, like me, you prefer using Podman over Docker
-ENGINE=docker python provided-tests/test.py 
+ENGINE=docker python python -m python-tests
 ```
-
-Note: If you're on MacOS you might need to use the `python3` command instead of
-the `python` command.
 
 The provided tests are by no means meant to fully test the specification so you
 are strongly encouraged to build on our test suite (e.g. add more tests, make
@@ -91,12 +92,12 @@ you should do modifications to the test suite in another directory such as
 
 ## Submissions
 
-To submit your repository, fill out [this google form]([TODO](https://docs.google.com/forms/d/e/1FAIpQLScR3vY-Cbghpvv1kZYddVVHoxoQ-Kh_j4MPoXsJv2GCkZnNMg/viewform?usp=header)) with your
+To submit your repository, fill out [this google form](https://docs.google.com/forms/d/e/1FAIpQLScR3vY-Cbghpvv1kZYddVVHoxoQ-Kh_j4MPoXsJv2GCkZnNMg/viewform?usp=header) with your
 repository URL and your commit hash. Please ensure you are signed in with your
 UCSC email, otherwise this form will be inaccessible. You are welcome to resubmit
 up until the due date. After the due date, resubmissions are no longer accepted. 
 First-time submissions after the due date will count against your grace day
 and may be docked credit for being late (see the syllabus for the late policy).
 
-Grades and feedback will be provided via git pushes to the zejones-asgn1-feedback 
-branch of your repository.
+Grades and feedback will be provided via git pushes to your repository via the 
+zejones-asgn1-feedback branch.
