@@ -499,6 +499,7 @@ class ClusterConductor:
 
     def restore_machine(self, node_id: int) -> None:
         node = self.nodes[node_id]
+        self._parent.send_view(node_id, self.get_view())
         self._spawn_node(node.index)
 
     def describe_cluster(self) -> None:
