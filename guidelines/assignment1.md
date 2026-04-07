@@ -35,6 +35,7 @@ If you follow the above setup then you'll be able to easily fetch future updates
 repository by simply running:
 
 ```sh 
+git fetch upstream/main
 git rebase upstream/main 
 ```
 
