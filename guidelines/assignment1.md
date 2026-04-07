@@ -31,7 +31,7 @@ git remote add origin YOUR_REPO_LINK
 git push --set-upstream origin --all
 ```
 
-If you follow the above setup then you'll be able to easily fetch updates to this
+If you follow the above setup then you'll be able to easily fetch future updates to this
 repository by simply running:
 
 ```sh 
