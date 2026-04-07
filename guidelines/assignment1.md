@@ -81,7 +81,7 @@ To run the test do the following:
 # if this hasn't been run in the terminal session thus far 
 source .venv/bin/activate 
 # you can also do ENGINE=podman if, like me, you prefer using Podman over Docker
-ENGINE=docker python -m python-tests
+ENGINE=docker python -m provided-tests
 ```
 
 The provided tests are by no means meant to fully test the specification so you
