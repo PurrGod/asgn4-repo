@@ -8,7 +8,7 @@ from typing import List
 
 import requests
 
-# from ..tests.helper import KVSTestFixture
+from .kvs_api import KVSTestFixture
 from .util import Logger, run_cmd_bg
 
 CONTAINER_ENGINE = os.getenv("ENGINE", "docker")
@@ -58,7 +58,7 @@ DEFAULT_SHARD_NAME = "defaultShard"
 
 
 class ClusterConductor:
-    # _parent: KVSTestFixture
+    _parent: KVSTestFixture
 
     def __init__(
         self,
@@ -358,6 +358,134 @@ class ClusterConductor:
 
         # clear nodes
         self.nodes.clear()
+
+    # if partition_id is not specified then it will default to the default network
+    # all nodes are in during the initial spawn
+    def partition(self, node_ids: List[int], partition_id: str | None) -> None:
+        partition_id = partition_id if partition_id is not None else self.base_net_name
+        net_name = f"kvs_{self.group_id}_{self.thread_id}_net_{partition_id}"
+
+        self.log(f"creating partition {partition_id} with nodes {node_ids}")
+        # create partition network if it doesn't exist
+        if not self._network_exists(net_name):
+            self._create_network(net_name)
+
+        # disconnect specified nodes from all other networks
+        self.log("  disconnecting nodes from other networks")
+        for i in node_ids:
+            node = self.nodes[i]
+            for network in node.networks:
+                if network != net_name:
+                    self.log(f"    disconnecting {node.name} from network {network}")
+                    run_cmd_bg(
+                        [CONTAINER_ENGINE, "network", "disconnect", network, node.name],
+                        verbose=True,
+                        error_prefix=f"failed to disconnect {node.name} from network {
+                            network
+                        }",
+                    )
+                    node.networks.remove(network)
+
+        # connect nodes to partition network, and update node ip
+        self.log(f"  connecting nodes to partition network {net_name}")
+        view_changed = False
+        for i in node_ids:
+            node = self.nodes[i]
+
+            self.log(f"node.networks: {node.networks}")
+            if net_name in node.networks:
+                self.log("network alr exists!")
+                continue
+
+            self.log(f"    connecting {node.name} to network {net_name}")
+            run_cmd_bg(
+                [
+                    CONTAINER_ENGINE,
+                    "network",
+                    "connect",
+                    net_name,
+                    node.name,
+                ],
+                verbose=True,
+                error_prefix=f"failed to connect {node.name} to network {net_name}",
+            )
+            node.networks.append(net_name)
+
+            # update node ip on the new network
+            inspect = subprocess.run(
+                [CONTAINER_ENGINE, "inspect", node.name],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=True,
+            )
+            info = json.loads(inspect.stdout)[0]
+            container_ip = info["NetworkSettings"]["Networks"][net_name]["IPAddress"]
+            self.log(f"    node {node.name} ip in network {net_name}: {container_ip}")
+
+            # update node ip
+
+            if container_ip != node.ip:
+                self.log(
+                    f"Warning: Node {i} IP addr changed from {node.ip} to {container_ip}"
+                )
+                node.ip = container_ip
+                if CONTAINER_ENGINE == "podman":
+                    if hasattr(self, "_parent"):
+                        self._parent.clients[
+                            node.index
+                        ].base_url = self.node_external_endpoint(node.index)
+                    view_changed = True
+        if CONTAINER_ENGINE == "podman" and view_changed and hasattr(self, "_parent"):
+            self._parent.rebroadcast_view(self.get_view())
+
+        # connect nodes to partition network, and update node ip
+        self.log(f"  connecting nodes to partition network {net_name}")
+        view_changed = False
+        for i in node_ids:
+            node = self.nodes[i]
+            self.log(f"    connecting {node.name} to network {net_name}")
+            run_cmd_bg(
+                [
+                    CONTAINER_ENGINE,
+                    "network",
+                    "connect",
+                    net_name,
+                    node.name,
+                ],
+                verbose=True,
+                error_prefix=f"failed to connect {node.name} to network {net_name}",
+            )
+            node.networks.append(net_name)
+
+            # update node ip on the new network
+            inspect = subprocess.run(
+                [CONTAINER_ENGINE, "inspect", node.name],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=True,
+            )
+            info = json.loads(inspect.stdout)[0]
+            container_ip = info["NetworkSettings"]["Networks"][net_name]["IPAddress"]
+            self.log(f"    node {node.name} ip in network {net_name}: {container_ip}")
+
+            # update node ip
+            if container_ip != node.ip:
+                self.log(
+                    f"Warning: Node {i} IP addr changed from {node.ip} to {container_ip}"
+                )
+                node.ip = container_ip
+                if CONTAINER_ENGINE == "podman" or REBROADCAST_VIEW == "true":
+                    if hasattr(self, "_parent"):
+                        self._parent.clients[
+                            node.index
+                        ].base_url = self.node_external_endpoint(node.index)
+                    view_changed = True
+        if (
+            (CONTAINER_ENGINE == "podman" or REBROADCAST_VIEW == "true")
+            and view_changed
+            and hasattr(self, "_parent")
+        ):
+            self._parent.rebroadcast_view(self.get_view())
 
     def describe_cluster(self) -> None:
         self.log(f"TOPOLOGY: group {self.group_id}")
