@@ -32,7 +32,9 @@ The HTTP request SHALL have the following HTTP headers:
 
 The body of the request SHALL be JSON in the following format:
 
-```json { "defaultShard": [ {"address": "196.168.0.1:8081", "id": 1} ] } ```
+```json 
+{ "defaultShard": [ {"address": "196.168.0.1:8081", "id": 1} ] } 
+```
 
 Please note that the "id" field is an integer, not a string.
 
