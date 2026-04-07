@@ -4,12 +4,14 @@ import re
 import subprocess
 import time
 from dataclasses import dataclass
-from typing import List
+from typing import TYPE_CHECKING, List
 
 import requests
 
-from .kvs_api import KVSTestFixture
 from .util import Logger, run_cmd_bg
+
+if TYPE_CHECKING:
+    from .kvs_api import KVSTestFixture
 
 CONTAINER_ENGINE = os.getenv("ENGINE", "docker")
 REBROADCAST_VIEW = os.getenv("REBROADCAST_VIEW", "false")
@@ -58,7 +60,8 @@ DEFAULT_SHARD_NAME = "defaultShard"
 
 
 class ClusterConductor:
-    _parent: KVSTestFixture
+    if TYPE_CHECKING:
+        _parent: KVSTestFixture
 
     def __init__(
         self,
@@ -366,7 +369,7 @@ class ClusterConductor:
         self.nodes.clear()
 
     # if partition_id is not specified then it will default to the default network
-    # all nodes are in during the initial spawn
+    # all nodes a…re in during the initial spawn
     def partition(self, node_ids: List[int], partition_id: str | None) -> None:
         partition_id = partition_id if partition_id is not None else self.base_net_name
         net_name = f"kvs_{self.group_id}_{self.thread_id}_net_{partition_id}"
