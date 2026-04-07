@@ -22,7 +22,7 @@ repository. To setup your git repository do the following:
 Then run the following locally:
 
 ```sh
-git clone git@git.ucsc.edu:cse138/winter26-assignment-1.git 
+git clone git@git.ucsc.edu:cse138/w26-assignment-1.git
 # renames the origin "remote" (this repository) to be called "upstream" 
 git remote rename origin upstream 
 # your newly created empty repository's ssh address on git.ucsc.edu
