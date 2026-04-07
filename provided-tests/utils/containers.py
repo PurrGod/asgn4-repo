@@ -254,88 +254,14 @@ class ClusterConductor:
         # spawn the nodes
         for i in range(node_count):
             node_name = self._node_name(i)
-            # map to sequential external port
-            external_port = self.base_port + i
             port = 8081  # internal port
 
-            self.log(f"  starting container {node_name} (ext_port={external_port})")
-
-            # start container detached from networks
-            run_cmd = [
-                CONTAINER_ENGINE,
-                "run",
-                "-d",
-                "--name",
-                node_name,
-                "--env",
-                f"NODE_IDENTIFIER={i}",
-                "-p",
-                f"{port}",
-                self.base_image,
-            ]
-            if CONTAINER_ENGINE == "podman":
-                run_cmd.insert(2, "--log-driver=k8s-file")
-            run_cmd_bg(
-                run_cmd,
-                verbose=True,
-                error_prefix=f"failed to start container {node_name}",
-                log=self.log,
-            )
-
-            res = run_cmd_bg(
-                [CONTAINER_ENGINE, "port", node_name, str(port)],
-                verbose=True,
-                log=self.log,
-            )
-            external_port = int(res.stdout.rsplit(":", 1)[1])
-
-            # attach container to base network
-            self.log(f"    attaching container {node_name} to base network")
-            run_cmd_bg(
-                [
-                    CONTAINER_ENGINE,
-                    "network",
-                    "connect",
-                    self.base_net_name,
-                    node_name,
-                ],
-                verbose=True,
-                error_prefix=f"failed to attach container {node_name} to base network",
-                log=self.log,
-            )
-
-            # inspect the container to get ip, etc.
-            self.log(f"    inspecting container {node_name}")
-            try:
-                inspect = subprocess.run(
-                    [CONTAINER_ENGINE, "inspect", node_name],
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    check=True,
-                )
-            except subprocess.CalledProcessError as e:
-                self.log(f"failed to inspect container {node_name}")
-                self.log(e.stderr.decode())
-                raise
-            info = json.loads(inspect.stdout)[0]
-
-            container_ip = info["NetworkSettings"]["Networks"][self.base_net_name][
-                "IPAddress"
-            ]
-
+            node = self._spawn_node(i, port)
             # store container metadata
-            node = ClusterNode(
-                name=node_name,
-                index=i,
-                ip=container_ip,
-                port=port,
-                external_port=external_port,
-                networks=[self.base_net_name],
-            )
             self.nodes.append(node)
             self.shards[DEFAULT_SHARD_NAME].append(node)
 
-            self.log(f"    container {node_name} spawned, base_net_ip={container_ip}")
+            self.log(f"    container {node_name} spawned, base_net_ip={node.ip}")
 
         # wait for the nodes to come online (sequentially)
         self.log("waiting for nodes to come online...")
@@ -351,6 +277,86 @@ class ClusterConductor:
             self.log(f"  node {node.name} online")
 
         self.log("all nodes online")
+
+    def _spawn_node(
+        self,
+        i: int,
+        port: int = 8081,
+    ) -> ClusterNode:
+        node_name = self._node_name(i)
+        # start container detached from networks
+        run_cmd = [
+            CONTAINER_ENGINE,
+            "run",
+            "-d",
+            "--name",
+            node_name,
+            "--env",
+            f"NODE_IDENTIFIER={i}",
+            "-p",
+            f"{port}",
+            self.base_image,
+        ]
+        if CONTAINER_ENGINE == "podman":
+            run_cmd.insert(2, "--log-driver=k8s-file")
+        run_cmd_bg(
+            run_cmd,
+            verbose=True,
+            error_prefix=f"failed to start container {node_name}",
+            log=self.log,
+        )
+
+        res = run_cmd_bg(
+            [CONTAINER_ENGINE, "port", node_name, str(port)],
+            verbose=True,
+            log=self.log,
+        )
+        external_port = int(res.stdout.rsplit(":", 1)[1])
+
+        # attach container to base network
+        self.log(f"    attaching container {node_name} to base network")
+        run_cmd_bg(
+            [
+                CONTAINER_ENGINE,
+                "network",
+                "connect",
+                self.base_net_name,
+                node_name,
+            ],
+            verbose=True,
+            error_prefix=f"failed to attach container {node_name} to base network",
+            log=self.log,
+        )
+
+        # inspect the container to get ip, etc.
+        self.log(f"    inspecting container {node_name}")
+        try:
+            inspect = subprocess.run(
+                [CONTAINER_ENGINE, "inspect", node_name],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=True,
+            )
+        except subprocess.CalledProcessError as e:
+            self.log(f"failed to inspect container {node_name}")
+            self.log(e.stderr.decode())
+            raise
+        info = json.loads(inspect.stdout)[0]
+
+        container_ip = info["NetworkSettings"]["Networks"][self.base_net_name][
+            "IPAddress"
+        ]
+
+        # store container metadata
+        node = ClusterNode(
+            name=node_name,
+            index=i,
+            ip=container_ip,
+            port=port,
+            external_port=external_port,
+            networks=[self.base_net_name],
+        )
+        return node
 
     def destroy_cluster(self) -> None:
         # clean up after this group
@@ -486,6 +492,14 @@ class ClusterConductor:
             and hasattr(self, "_parent")
         ):
             self._parent.rebroadcast_view(self.get_view())
+
+    def crash_machine(self, node_id: int) -> None:
+        node = self.nodes[node_id]
+        self._remove_container(node.name)
+
+    def restore_machine(self, node_id: int) -> None:
+        node = self.nodes[node_id]
+        self._spawn_node(node.index)
 
     def describe_cluster(self) -> None:
         self.log(f"TOPOLOGY: group {self.group_id}")
