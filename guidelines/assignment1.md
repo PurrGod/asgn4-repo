@@ -92,12 +92,14 @@ you should do modifications to the test suite in another directory such as
 
 ## Submissions
 
-To submit your repository, fill out [this google form](https://docs.google.com/forms/d/e/1FAIpQLScR3vY-Cbghpvv1kZYddVVHoxoQ-Kh_j4MPoXsJv2GCkZnNMg/viewform?usp=header) with your
-repository URL and your commit hash. Please ensure you are signed in with your
-UCSC email, otherwise this form will be inaccessible. You are welcome to resubmit
-up until the due date. After the due date, resubmissions are no longer accepted. 
-First-time submissions after the due date will count against your grace day
-and may be docked credit for being late (see the syllabus for the late policy).
+To submit your repository, fill out [this google
+form](https://docs.google.com/forms/d/e/1FAIpQLScR3vY-Cbghpvv1kZYddVVHoxoQ-Kh_j4MPoXsJv2GCkZnNMg/viewform?usp=header)
+with your repository URL and your commit hash. Please ensure you are signed into
+Google with your UCSC email, otherwise this form will be inaccessible. You are
+welcome to resubmit up until the due date. After the due date, resubmissions are
+no longer accepted. First-time submissions after the due date will count against
+your grace day and may be docked credit for being late (see the syllabus for the
+late policy).
 
 Grades and feedback will be provided via git pushes to your repository via the 
 zejones-asgn1-feedback branch.
