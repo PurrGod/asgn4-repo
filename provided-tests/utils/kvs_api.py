@@ -43,7 +43,8 @@ class KVSTestFixture:
 
             r = self.clients[i].ping()
             assert r.status_code == 200, f"expected 200 for ping, got {r.status_code}"
-            self.log(f"  - node {i} is up: {r.text}")
+
+            self.log(f"  - node {i} is up")
 
     def broadcast_view(self, view: Dict[str, List[Dict[str, Any]]]):
         self.log(f"\n> SEND VIEW: {view}")

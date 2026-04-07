@@ -66,8 +66,8 @@ Within this repository exists a basic Python tester. To setup your python
 environment run the following: 
 
 ```sh 
-python -m venv .venv source
-.venv/bin/activate 
+python -m venv .venv 
+source .venv/bin/activate 
 python -m pip install -r provided-tests/requirements.txt 
 ```
 

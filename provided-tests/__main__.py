@@ -18,13 +18,12 @@ import re
 import sys
 from datetime import datetime
 
-from utils.test_case import TestCase
-from utils.util import Logger, global_logger, log
-
 from .tests.hello import hello_cluster
 from .tests.put_and_get import put_and_get
 from .tests.update import update
 from .utils.containers import ClusterConductor, ContainerBuilder
+from .utils.test_case import TestCase
+from .utils.util import Logger, global_logger, log
 
 # test functions
 # TODO: for parallel test runs, use generated group id
@@ -103,9 +102,7 @@ add more tests by appending to this list
 """
 
 
-TEST_SET = []
-# tests from here...
-TEST_SET.append(TestCase("hello_cluster", hello_cluster))
+TEST_SET = tests
 
 FAIL_FAST = True
 

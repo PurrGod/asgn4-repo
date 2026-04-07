@@ -5,11 +5,7 @@ from ..utils.util import Logger
 
 def update(conductor: ClusterConductor, dir, log: Logger):
     with KVSTestFixture(conductor, dir, log, node_count=1) as fx:
-        fx.broadcast_view(conductor.get_view())
-        # create a cluster
-        log("\n> SPAWN CLUSTER")
-        conductor.spawn_cluster(node_count=1)
-        client = KVSClient(conductor.node_external_endpoint(0))
+        client = fx.clients[0]
 
         r = client.put("test2", "original")
         assert r.status_code == 200
