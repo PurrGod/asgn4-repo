@@ -3,13 +3,8 @@
 """
 HW1: TEST SCRIPT
 
-Put this in the same directory as your Dockerfile.
-Then, run it with `python3 test.py`.
-
-This will build your image, create a container, then run tests to make sure it conforms to the spec.
+This will build your image, create a container, then run tests.
 If any test fails, it will explain what went wrong.
-
-You may add your own tests by adding to the `tests` variable.
 """
 
 import argparse

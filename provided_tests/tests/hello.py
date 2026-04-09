@@ -17,6 +17,7 @@ def hello_cluster(conductor: ClusterConductor, dir, log: Logger):
     n0_ep = conductor.node_external_endpoint(0)
     n0_client = KVSClient(n0_ep)
     n0_client.ping().raise_for_status()
+
     log(f"  - node 0 is up at {n0_ep}")
 
     conductor.dump_all_container_logs(dir)
