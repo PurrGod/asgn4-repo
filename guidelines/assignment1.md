@@ -70,7 +70,7 @@ environment run the following:
 ```sh 
 python -m venv .venv 
 source .venv/bin/activate 
-python -m pip install -r provided-tests/requirements.txt 
+python -m pip install -r provided_tests/requirements.txt 
 ```
 
 Note: If you're on MacOS you might need to use the `python3` command instead of
