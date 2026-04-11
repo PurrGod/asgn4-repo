@@ -77,7 +77,10 @@ class TestRunner:
         self.conductor.cleanup_hanging(group_only=True)
 
 
-timestamp = datetime.now().strftime("test_results/%Y_%m_%d_%H:%M:%S")
+if sys.platform.startswith("win"):
+    timestamp = datetime.now().strftime("test_results/%Y_%m_%d_%H:%M:%S")
+else:
+    timestamp = datetime.now().strftime("test_results/%Y_%m_%d_%H%M%S")
 DEBUG_OUTPUT_DIR = os.path.join(os.getcwd(), timestamp)
 os.makedirs(DEBUG_OUTPUT_DIR, exist_ok=True)
 log(f"Debug output will be saved in: {DEBUG_OUTPUT_DIR}")
