@@ -174,9 +174,15 @@ def main():
             run_tests.append(test)
             logger("\n")
             if score:
-                logger(f"✓ PASSED {test.name}")
+                if sys.platform.startswith("win"):
+                    logger(f"[PASSED] {test.name}")
+                else:
+                    logger(f"✓ PASSED {test.name}")
             else:
-                logger(f"✗ FAILED {test.name}: {reason}")
+                if sys.platform.startswith("win"):
+                    logger(f"[FAILED] {test.name}: {reason}")
+                else:
+                    logger(f"✗ FAILED {test.name}: {reason}")
             return score
 
     print("Running tests sequentially")

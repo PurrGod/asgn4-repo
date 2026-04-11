@@ -43,6 +43,11 @@ def run_cmd_bg(
     kwargs.setdefault("text", True)
     kwargs.setdefault("check", True)
 
+    if kwargs.get("text"):
+        # Docker/CLI output may be UTF-8; windows raises an error when not ASCII
+        kwargs.setdefault("encoding", "utf-8")
+        kwargs.setdefault("errors", "replace")
+
     if verbose:
         log(f"$ {cmd[0]} {' '.join(cmd[1:])}")
 
