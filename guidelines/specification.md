@@ -5,6 +5,8 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
 interpreted as described in [RFC
 2119](https://datatracker.ietf.org/doc/html/rfc2119).
 
+The server MUST run on port 8081.
+
 ## GET `/ping`
 
 ### Request
