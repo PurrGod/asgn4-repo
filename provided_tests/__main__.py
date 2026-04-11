@@ -157,7 +157,7 @@ def main():
         test_dir = create_test_dir(DEBUG_OUTPUT_DIR, test_set_name, test.name)
         log_file_path = os.path.join(test_dir, f"{test.name}.log")
 
-        with open(log_file_path, "w") as log_file:
+        with open(log_file_path, "w", encoding="utf-8") as log_file:
             log_file.write(f"Logs for test {test.name}\n")
 
             logger = Logger(files=(log_file, sys.stderr))
@@ -193,7 +193,7 @@ def main():
                 break
 
     summary_log = os.path.join(DEBUG_OUTPUT_DIR, "summary.log")
-    with open(summary_log, "w") as log_file:
+    with open(summary_log, "w", encoding="utf-8") as log_file:
         logger = Logger(files=(log_file, sys.stderr))
         logger("\n== TEST SUMMARY ==\n")
         for test in run_tests:

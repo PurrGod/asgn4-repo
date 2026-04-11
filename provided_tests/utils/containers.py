@@ -136,7 +136,7 @@ class ClusterConductor:
 
         try:
             logs_output = subprocess.check_output(logs_cmd, stderr=subprocess.STDOUT)
-            with open(log_file, "wb") as f:
+            with open(log_file, "wb", encoding="utf-8") as f:
                 f.write(logs_output)
             self.log(f"Successfully wrote logs for container {name} to {log_file}")
         except subprocess.CalledProcessError as e:
