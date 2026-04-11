@@ -23,7 +23,7 @@ from .utils.util import Logger, global_logger, log
 # test functions
 # TODO: for parallel test runs, use generated group id
 CONTAINER_IMAGE_ID = "kvstore-asgn1-test"
-TEST_GROUP_ID = "hw3"
+TEST_GROUP_ID = "asgn1"
 
 
 # run test set
