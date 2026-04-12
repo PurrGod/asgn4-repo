@@ -16,7 +16,7 @@ The request SHALL have an empty body.
 ### Response
 
 The service MUST return an HTTP response with a status code of 200 and an empty
-body.
+body within a timely manner (at most five seconds from receiving the request).
 
 ## PUT `/view`
 
@@ -43,7 +43,7 @@ Please note that the "id" field is an integer, not a string.
 ### Response
 
 The service MUST return an HTTP response with a status code of 200 and an empty
-body.
+body within a timely manner (at most five seconds from receiving the request).
 
 ## PUT `/data/{key}`
 
@@ -65,8 +65,8 @@ content SHALL be ASCII text.
 The response MUST only be sent once the body content has been stored under the
 specified `key` so that future GET requests will return the value. The response
 status code MUST be a 200 and the service MUST reply within a timely manner (at
-most five seconds). Once the response to a PUT request has been sent it is considered
-acknowledged.
+most five seconds from receiving the request). Once the response to a PUT
+request has been sent it is considered acknowledged.
 
 ## GET `/data/{key}`
 
@@ -83,4 +83,5 @@ request SHALL have the following HTTP headers:
 If this server has not acknowledged any write under the specified `key` yet, the
 status code MUST be 404 and the body MUST be empty. Otherwise, the server MUST
 reply with a status code of 200 and the most recently acknowledged PUT request's
-body for the specified `key`.
+body for the specified `key`. Either way, the server MUST reply within a timely
+manner (at most five seconds from receiving the request).
