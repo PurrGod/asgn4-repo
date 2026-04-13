@@ -71,8 +71,7 @@ request has been sent it is considered acknowledged.
 ## GET `/data/{key}`
 
 The {key} placeholder above in the path has a maximum length of 128 characters
-and can consist of the alphanumeric characters along with the dash (-). The HTTP
-request SHALL have the following HTTP headers:
+and can consist of the alphanumeric characters along with the dash (-).
 
 ### Parameters
 - key: guaranteed to match the following regex: `[0-9a-zA-Z-]{0,128}`.
