@@ -1,5 +1,5 @@
 from ..utils.containers import ClusterConductor
-from ..utils.kvs_api import KVSClient, KVSTestFixture
+from ..utils.kvs_api import KVSTestFixture
 from ..utils.util import Logger
 
 

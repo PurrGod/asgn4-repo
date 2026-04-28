@@ -1,4 +1,6 @@
 import asyncio
+from http.cookiejar import CookieJar
+from time import sleep
 from typing import Any, Dict, List
 
 import aiohttp
@@ -26,16 +28,28 @@ def create_json(metadata, value=None):
 
 
 class KVSTestFixture:
-    def __init__(self, conductor: ClusterConductor, dir, log: Logger, node_count: int):
+    def __init__(
+        self,
+        conductor: ClusterConductor,
+        dir,
+        log: Logger,
+        node_count: int,
+        sync_time: int = 10,
+    ):
         self.conductor = conductor
         self.dir = dir
         self.node_count = node_count
         self.clients: list[KVSClient] = []
         self.log = log
+        conductor._parent = self
+        self.sync_time = sync_time
+
+    def sleep_for_sync(self):
+        sleep(self.sync_time)
 
     def spawn_cluster(self):
         self.log("\n> SPAWN CLUSTER")
-        self.conductor.spawn_cluster(node_count=self.node_count)
+        self.conductor.spawn_cluster(node_count=self.node_count, n=self.sync_time)
 
         for i in range(self.node_count):
             ep = self.conductor.node_external_endpoint(i)
@@ -156,7 +170,7 @@ class KVSClient:
         self, view: dict[str, List[Dict[str, Any]]], timeout: float | None = None
     ) -> aiohttp.ClientResponse:
         self.last_view = view
-        request_body = {"view": view}
+        request_body = view
 
         async with aiohttp.ClientSession() as session:
             async with session.put(
@@ -184,6 +198,6 @@ class KVSClient:
             for node in self.last_view[shard_key]:
                 node["address"] = flattened_current_view[node["id"]]
 
-        request_body = {"view": self.last_view}
+        request_body = self.last_view
         log(f"Sending new view: {self.last_view}")
         return requests.put(f"{self.base_url}/view", json=request_body, timeout=timeout)

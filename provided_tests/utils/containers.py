@@ -236,7 +236,7 @@ class ClusterConductor:
         return self.nodes[index].external_endpoint()
 
     # create a cluster of nodes on the base network
-    def spawn_cluster(self, node_count: int) -> None:
+    def spawn_cluster(self, node_count: int, n: int = 10) -> None:
         self.log(f"spawning cluster of {node_count} nodes")
 
         # delete base network if it exists
@@ -259,7 +259,7 @@ class ClusterConductor:
             node_name = self._node_name(i)
             port = 8081  # internal port
 
-            node = self._spawn_node(i, port)
+            node = self._spawn_node(i, port, n)
             # store container metadata
             self.nodes.append(node)
             self.shards[DEFAULT_SHARD_NAME].append(node)
@@ -285,6 +285,7 @@ class ClusterConductor:
         self,
         i: int,
         port: int = 8081,
+        n: int = 10,
     ) -> ClusterNode:
         node_name = self._node_name(i)
         # start container detached from networks
@@ -296,6 +297,8 @@ class ClusterConductor:
             node_name,
             "--env",
             f"NODE_IDENTIFIER={i}",
+            "--env",
+            f"N={n}",
             "-p",
             f"{port}",
             self.base_image,
@@ -400,58 +403,6 @@ class ClusterConductor:
         view_changed = False
         for i in node_ids:
             node = self.nodes[i]
-
-            self.log(f"node.networks: {node.networks}")
-            if net_name in node.networks:
-                self.log("network alr exists!")
-                continue
-
-            self.log(f"    connecting {node.name} to network {net_name}")
-            run_cmd_bg(
-                [
-                    CONTAINER_ENGINE,
-                    "network",
-                    "connect",
-                    net_name,
-                    node.name,
-                ],
-                verbose=True,
-                error_prefix=f"failed to connect {node.name} to network {net_name}",
-            )
-            node.networks.append(net_name)
-
-            # update node ip on the new network
-            inspect = subprocess.run(
-                [CONTAINER_ENGINE, "inspect", node.name],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                check=True,
-            )
-            info = json.loads(inspect.stdout)[0]
-            container_ip = info["NetworkSettings"]["Networks"][net_name]["IPAddress"]
-            self.log(f"    node {node.name} ip in network {net_name}: {container_ip}")
-
-            # update node ip
-
-            if container_ip != node.ip:
-                self.log(
-                    f"Warning: Node {i} IP addr changed from {node.ip} to {container_ip}"
-                )
-                node.ip = container_ip
-                if CONTAINER_ENGINE == "podman":
-                    if hasattr(self, "_parent"):
-                        self._parent.clients[
-                            node.index
-                        ].base_url = self.node_external_endpoint(node.index)
-                    view_changed = True
-        if CONTAINER_ENGINE == "podman" and view_changed and hasattr(self, "_parent"):
-            self._parent.rebroadcast_view(self.get_view())
-
-        # connect nodes to partition network, and update node ip
-        self.log(f"  connecting nodes to partition network {net_name}")
-        view_changed = False
-        for i in node_ids:
-            node = self.nodes[i]
             self.log(f"    connecting {node.name} to network {net_name}")
             run_cmd_bg(
                 [
@@ -483,17 +434,12 @@ class ClusterConductor:
                     f"Warning: Node {i} IP addr changed from {node.ip} to {container_ip}"
                 )
                 node.ip = container_ip
-                if CONTAINER_ENGINE == "podman" or REBROADCAST_VIEW == "true":
-                    if hasattr(self, "_parent"):
-                        self._parent.clients[
-                            node.index
-                        ].base_url = self.node_external_endpoint(node.index)
-                    view_changed = True
-        if (
-            (CONTAINER_ENGINE == "podman" or REBROADCAST_VIEW == "true")
-            and view_changed
-            and hasattr(self, "_parent")
-        ):
+                if hasattr(self, "_parent"):
+                    self._parent.clients[
+                        node.index
+                    ].base_url = self.node_external_endpoint(node.index)
+                view_changed = True
+        if view_changed and hasattr(self, "_parent"):
             self._parent.rebroadcast_view(self.get_view())
 
     def crash_machine(self, node_id: int) -> None:
