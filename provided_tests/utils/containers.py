@@ -445,6 +445,7 @@ class ClusterConductor:
     def crash_machine(self, node_id: int) -> None:
         node = self.nodes[node_id]
         self._remove_container(node.name)
+        self.remove_node_from_shard(DEFAULT_SHARD_NAME, node)
 
     def restore_machine(self, node_id: int) -> None:
         node = self.nodes[node_id]
