@@ -1,6 +1,10 @@
 # Assignment 3: Strongly Consistent Key/Value Store
 
+<<<<<<< HEAD
 Due at 11:40 AM on 2026-04-30.
+=======
+Due at 11:40 AM on 2026-05-14.
+>>>>>>> 6b11ce9 (assignment 3 draft)
 
 
 ## Overview
@@ -270,7 +274,7 @@ like so with all your groupmates' emails:
 ## Submissions
 
 To submit your repository, fill out [this google
-form](https://docs.google.com/forms/d/e/1FAIpQLSfIKdRBIOLiPsZrbiiCA6u2cB8_1F-TymudbAlTkK-Vuf53jg/viewform?usp=publish-editor)
+form](https://docs.google.com/forms/d/e/1FAIpQLSfevaURMsmUKdZUA3OVWXOH3tumSldrbDfHue2eibH0ScahAg/viewform?usp=publish-editor)
 with your repository URL and your commit hash. Please ensure you are signed into
 Google with your UCSC email, otherwise this form will be inaccessible. You are
 welcome to resubmit up until the due date. After the due date, resubmissions are
