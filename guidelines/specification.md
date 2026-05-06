@@ -52,6 +52,9 @@ Furthermore, if only the IP addresses of the nodes changed, then all nodes MUST
 reply with a 200 status code within N seconds of the view change, regardless of
 the network topology.
 
+During a view change, any pending PUT request MAY become implicitly
+acknowledged, even without notifying the client of such an acknowledgement.
+
 ### Request
 
 The HTTP request SHALL have the following HTTP headers:
