@@ -1,10 +1,6 @@
 # Assignment 3: Strongly Consistent Key/Value Store
 
-<<<<<<< HEAD
-Due at 11:40 AM on 2026-04-30.
-=======
 Due at 11:40 AM on 2026-05-14.
->>>>>>> 6b11ce9 (assignment 3 draft)
 
 
 ## Overview
@@ -219,12 +215,8 @@ areas of expansion/modification for the provided test suite:
   handle new replicas coming online via view changes. You may need to poke
   around the testing utils to figure out how to kill servers and spawn new ones.
   Remember to broadcast the view when a new server is spawned!
-- The environment variable N is also not set in the test suite. If you plan to
-  use it to inform how often you sync then you should probably expand the test
-  suite to support N.
-- If you decide to go for tiebreaking with system time (against our
-  recommendation) it might be worth figuring out how to mess with the system
-  time of your containers.
+- Multithreading the test suite 
+- Trying out [property-based testing](https://en.wikipedia.org/wiki/Property_testing)
 
 ## Required Files/Documentation
 
@@ -244,16 +236,12 @@ on both x86_64 and arm64.
 
 You must include a README.md file in the root of the repository which explains:
 1. your dependencies
-2. how you did eventual consistency (syncing between your servers) 
-3. how you did causal convergence (which tiebreaking strategy, what you put in
-   your cookie, etc)
+2. How you got new nodes up to speed
+3. How you chose which nodes to play which roles and what roles they played
 4. Your server's architecture (what directories/files do what)
 5. how you tested your code (cite your classmates here if you used their tests!). Note that you do not need to describe every test, but you should provide a high-level overview of your testing strategy.
 6. which group members did what
 7. No more than one paragraph on how your group used LLMs to complete the assignment
-
-You must also justify every decision you made when it comes to upholding causal
-convergence and eventual consistency.
 
 If you'd like you're welcome to link out of the README.md for better
 organization (e.g. have each group member write what they did in a separate
