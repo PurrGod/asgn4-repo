@@ -50,11 +50,11 @@ necessary to uphold causal convergence by having the service occasionally return
 503 responses.
 
 For assignment 3 we further reduce availability such that if any server becomes
-partitioned from any other server then the service MAY stop serving PUT requests
-altogether if necessary to ensure strong consistency. Notably even if all
-servers are partitioned from one another, at least one node MUST still be
-available to reply to GET requests. Ultimately, for assignment 3 you MUST only
-sacrifice availability if strictly necessary to uphold strong consistency.
+partitioned from any other server then the service MAY stop serving PUT and GET
+requests altogether if necessary to ensure strong consistency. Notably in the
+case where all servers are alive but partitioned from one another, at least one
+node MUST still reply to GET requests. Ultimately, for assignment 3 you MUST
+only sacrifice availability if strictly necessary to uphold strong consistency.
 
 ## Stateless Client
 
