@@ -96,11 +96,13 @@ The response MUST only be sent once the body content has been stored under the
 specified `key` across all servers.
 
 You MAY return a response with a 500 status code if the server has not received
-a view yet. Otherwise, the response status code MUST be a 200 and the service
-MUST reply within a timely manner (at most N seconds from receiving the request)
-UNLESS replying that soon would violate strong consistency due to a partition in
-the network or a crashed node. Once the response to a PUT request has been sent
-it is considered acknowledged.
+a view yet. You MAY also reply with a 307 status code. See the section in the
+assignment 3 doc on temporary redirect responses for more information about when
+you are allowed to reply with a 307 response code. Otherwise, the response
+status code MUST be a 200 and the service MUST reply within a timely manner (at
+most N seconds from receiving the request) UNLESS replying that soon would
+violate strong consistency due to a partition in the network or a crashed node.
+Once the response to a PUT request has been sent it is considered acknowledged.
 
 ## GET `/data/{key}`
 
@@ -114,10 +116,12 @@ and can consist of the alphanumeric characters along with the dash (-).
 ### Response
 
 You MAY return a response with a 500 status code if the server has not received
-a view yet. Otherwise, if this server has not acknowledged any write under the
-specified `key` yet, the status code MUST be 404 and the body MUST be empty.
-Otherwise, the server MUST reply with a status code of 200 and the most recently
-acknowledged PUT request's body for the specified `key`. Either way, the server
-MUST reply within a timely manner (at most N seconds from receiving the request)
-UNLESS replying would violate strong consistency due to a partition in the
-network or a crashed node.
+a view yet. You MAY also reply with a 307 status code. See the section in the
+assignment 3 doc on temporary redirect responses for more information about when
+you are allowed to reply with a 307 response code. Otherwise, if this server has
+not acknowledged any write under the specified `key` yet, the status code MUST
+be 404 and the body MUST be empty. Otherwise, the server MUST reply with a
+status code of 200 and the most recently acknowledged PUT request's body for the
+specified `key`. Either way, the server MUST reply within a timely manner (at
+most N seconds from receiving the request) UNLESS replying would violate strong
+consistency due to a partition in the network or a crashed node.
