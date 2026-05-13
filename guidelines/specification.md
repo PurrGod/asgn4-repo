@@ -73,7 +73,7 @@ Please note that the "id" field is an integer, not a string.
 ### Response
 
 The service MUST return an HTTP response with a status code of 200 and an empty
-body within a timely manner (at most five seconds from receiving the request).
+body within a timely manner (as specified above).
 
 ## PUT `/data/{key}`
 
