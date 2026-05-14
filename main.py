@@ -62,24 +62,13 @@ def get_other_nodes(view: Dict[str, List[Dict[str, Any]]]) -> List[Dict[str, Any
 
 def get_primary_node(view: Dict[str, List[Dict[str, Any]]]) -> Optional[str]:
     """
-    Get the primary/first node in the view for 307 redirects.
+    Get the primary/first node in the view.
     Returns the address of the first node in defaultShard.
     """
     if not view or "defaultShard" not in view or not view["defaultShard"]:
         return None
     
-    first_node = view["defaultShard"][0]
-    addr = first_node.get("address")
-    
-    # Don't redirect to self
-    my_addr = get_my_address(view)
-    if addr == my_addr:
-        # Return second node if available
-        if len(view["defaultShard"]) > 1:
-            return view["defaultShard"][1].get("address")
-        return None
-    
-    return addr
+    return view["defaultShard"][0].get("address")
 
 async def replicate_to_node(
     client: httpx.AsyncClient,
@@ -94,7 +83,7 @@ async def replicate_to_node(
     - is_redirect: True if node returned 307
     """
     try:
-        url = f"http://{node_address}/data/{key}"
+        url = f"http://{node_address}/internal/data/{key}"
         response = await client.put(
             url,
             content=value.encode('utf-8'),
@@ -202,6 +191,17 @@ async def local_get(key: str) -> Optional[str]:
     """Retrieve key-value pair from local store"""
     async with store_lock:
         return store.get(key)
+
+@app.put("/internal/data/{key}")
+async def internal_put_data(request: Request, key: str):
+    """Internal endpoint for replication. ONLY saves locally, never replicates further."""
+    try:
+        body = await request.body()
+        value = body.decode('utf-8')
+        await local_put(key, value)
+        return Response(status_code=200)
+    except Exception:
+        return Response(status_code=500)
 
 @app.get("/internal/store")
 async def get_store():
@@ -329,6 +329,17 @@ async def get_data(key: str = Path(..., pattern="^[0-9a-zA-Z-]{0,128}$")):
         # But GET is typically read-only and doesn't need coordination
         # Just return what we have
         
+        # check if we are at primary not, otherwise redirect to primary
+        primary = get_primary_node(view_snapshot)
+        my_addr = get_my_address(view_snapshot)
+        
+        if primary and my_addr and primary != my_addr:
+            return Response(
+                status_code=307, 
+                headers={"Location": f"http://{primary}/data/{key}"}
+            )
+
+        # if at primary, then go ahead and process the request
         value = await local_get(key)
         
         if value is not None:
