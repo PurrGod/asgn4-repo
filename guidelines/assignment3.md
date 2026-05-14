@@ -1,6 +1,6 @@
 # Assignment 3: Strongly Consistent Key/Value Store
 
-Due at 11:40 AM on 2026-05-14.
+Due at 11:40 AM on 2026-05-19.
 
 
 ## Overview
