@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Request, Response, Path
+from fastapi.responses import JSONResponse
 import uvicorn
 import httpx
 import asyncio
@@ -13,11 +14,11 @@ app = FastAPI()
 
 # In-memory store - maps key -> value
 store: Dict[str, str] = {}
-store_lock = threading.RLock()
+store_lock = asyncio.Lock()
 
 # Current view of nodes
 current_view: Dict[str, List[Dict[str, Any]]] = {"defaultShard": []}
-view_lock = threading.RLock()
+view_lock = asyncio.Lock()
 
 # Track when view was last updated (for view change acknowledgment)
 last_view_update_time: Optional[datetime] = None
@@ -33,7 +34,7 @@ TIMEOUT = float(os.getenv("N", "5"))
 # Track if we've been partitioned recently
 # This helps us decide whether to send 307 redirects
 partitioned_nodes: Set[int] = set()
-partition_lock = threading.RLock()
+partition_lock = asyncio.Lock()
 
 def get_my_address(view: Dict[str, List[Dict[str, Any]]]) -> Optional[str]:
     """Get my own address from the current view"""
@@ -124,7 +125,7 @@ async def replicate_to_all_nodes(key: str, value: str) -> bool:
     """
     global current_view, partitioned_nodes
     
-    with view_lock:
+    async with view_lock:
         view_snapshot = dict(current_view)
     
     other_nodes = get_other_nodes(view_snapshot)
@@ -160,7 +161,7 @@ async def check_connectivity_to_all_nodes() -> bool:
     """
     global current_view
     
-    with view_lock:
+    async with view_lock:
         view_snapshot = dict(current_view)
     
     other_nodes = get_other_nodes(view_snapshot)
@@ -185,7 +186,7 @@ async def check_connectivity_to_all_nodes() -> bool:
                 elif ping_result.status_code != 200:
                     unreachable.add(node_id)
             
-            with partition_lock:
+            async with partition_lock:
                 partitioned_nodes = unreachable
             
             return len(unreachable) == 0
@@ -194,13 +195,19 @@ async def check_connectivity_to_all_nodes() -> bool:
 
 async def local_put(key: str, value: str) -> None:
     """Store key-value pair locally in a thread-safe manner"""
-    with store_lock:
+    async with store_lock:
         store[key] = value
 
 async def local_get(key: str) -> Optional[str]:
     """Retrieve key-value pair from local store"""
-    with store_lock:
+    async with store_lock:
         return store.get(key)
+
+@app.get("/internal/store")
+async def get_store():
+    """Internal endpoint for state transfer between nodes."""
+    async with store_lock:
+        return JSONResponse(content=store)
 
 @app.get("/ping")
 async def ping():
@@ -211,21 +218,35 @@ async def ping():
 async def view(request: Request):
     """
     Update the view of nodes in the cluster.
-    
-    This endpoint receives the current view from a client and updates
-    the local understanding of cluster membership.
-    
-    Per spec: must acknowledge view within N seconds if only IPs changed,
-    or within 2N seconds in general (accounting for partitions).
     """
+    global current_view, node_id, last_view_update_time
+    
     try:
-        global current_view, node_id, last_view_update_time
-        
         body = await request.json()
         
-        with view_lock:
+        async with view_lock:
+            old_view = dict(current_view) if current_view else {}
             current_view = body
             last_view_update_time = datetime.now()
+        
+        my_addr = get_my_address(body)
+        other_nodes = get_other_nodes(body)
+        
+        was_in_old = False
+        if old_view and "defaultShard" in old_view:
+            was_in_old = any(n.get("address") == my_addr for n in old_view["defaultShard"])
+            
+        if not was_in_old and my_addr and other_nodes:
+            peer_addr = other_nodes[0]["address"]
+            try:
+                async with httpx.AsyncClient(timeout=httpx.Timeout(TIMEOUT)) as client:
+                    resp = await client.get(f"http://{peer_addr}/internal/store")
+                    if resp.status_code == 200:
+                        peer_store = resp.json()
+                        async with store_lock:
+                            store.update(peer_store)
+            except Exception:
+                pass
         
         # Extract our node ID from environment variable
         identifier = os.getenv("NODE_IDENTIFIER")
@@ -234,7 +255,7 @@ async def view(request: Request):
                 node_id = int(identifier)
             except:
                 pass
-        
+                
         return Response(status_code=200)
     except Exception as e:
         return Response(status_code=400)
@@ -256,7 +277,7 @@ async def put_data(request: Request, key: str = Path(..., pattern="^[0-9a-zA-Z-]
     """
     try:
         # Check if we have a view
-        with view_lock:
+        async with view_lock:
             if not current_view or "defaultShard" not in current_view:
                 return Response(status_code=500)
             view_snapshot = dict(current_view)
@@ -264,36 +285,24 @@ async def put_data(request: Request, key: str = Path(..., pattern="^[0-9a-zA-Z-]
         body = await request.body()
         value = body.decode('utf-8')
         
-        # Store locally first
-        await local_put(key, value)
-        
         # Check if we're partitioned
         all_reachable = await check_connectivity_to_all_nodes()
         
         if not all_reachable and len(get_other_nodes(view_snapshot)) > 0:
-            # We're partitioned - could return 307
-            # Per spec: "If a replica replies to a request with a 307 response
-            # then the replica with the address in the Location header MUST NOT
-            # reply with a 307 response unless a client has sent a view change
-            # made since the redirect reply was made."
-            # For simplicity, we can return 307 to direct client to primary node
-            primary = get_primary_node(view_snapshot)
-            if primary and primary != get_my_address(view_snapshot):
-                return Response(status_code=307, headers={"Location": f"http://{primary}/data/{key}"})
+            # We're partitioned
+            # when the primary node is also partitioned.
+            return Response(status_code=503)
         
         # Replicate to all other nodes
         success = await replicate_to_all_nodes(key, value)
         
         if success:
+            # Store locally ONLY if replication to the rest of the cluster succeeds
+            await local_put(key, value)
             return Response(status_code=200)
         else:
             # Replication failed - we cannot guarantee strong consistency
-            # Could try 307 redirect or block indefinitely
-            # For now, return 500 to indicate failure
-            primary = get_primary_node(view_snapshot)
-            if primary and primary != get_my_address(view_snapshot):
-                return Response(status_code=307, headers={"Location": f"http://{primary}/data/{key}"})
-            return Response(status_code=500)
+            return Response(status_code=503)
     
     except Exception as e:
         return Response(status_code=500)
@@ -311,7 +320,7 @@ async def get_data(key: str = Path(..., pattern="^[0-9a-zA-Z-]{0,128}$")):
     """
     try:
         # Check if we have a view
-        with view_lock:
+        async with view_lock:
             if not current_view or "defaultShard" not in current_view:
                 return Response(status_code=500)
             view_snapshot = dict(current_view)
