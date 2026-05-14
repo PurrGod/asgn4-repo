@@ -20,6 +20,8 @@ from .utils.containers import ClusterConductor, ContainerBuilder
 from .utils.test_case import TestCase
 from .utils.util import Logger, global_logger, log
 
+from .tests.strong_consistency import put_is_immediately_global
+
 # test functions
 # TODO: for parallel test runs, use generated group id
 CONTAINER_IMAGE_ID = "kvstore-asgn1-test"
@@ -31,6 +33,7 @@ tests = [
     TestCase("hello cluster", hello_cluster),
     TestCase("put and get", put_and_get),
     TestCase("updates", update),
+    TestCase("strong consistency", put_is_immediately_global),
 ]
 
 
