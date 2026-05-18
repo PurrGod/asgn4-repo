@@ -20,40 +20,31 @@ body within a timely manner (at most N seconds from receiving the request).
 
 ## PUT `/view`
 
-Gives the server a list of all known nodes, views, and shards. The term "shard"
-will be defined in a future assignment and for now all servers will always
-belong to the "defaultShard".
+Gives the server a list of all known nodes, views, and shards. A shard is a
+group of replicas which all are strongly consistent across the same set of keys.
+Different shards MAY store different sets of keys. This facilitates storing more
+data than what any individual shard could store by itself and allows for
+throughput on some keys even if another shard has a partition between its
+replicas.
 
-This endpoint is useful for upholding eventual consistency because it alerts the
-replicas of their neighbors so they know who to periodically sync with. It is
-also useful to onboard a new node to the view and have a client wait for the new
-node to be ready to receive requests.
+A client SHALL broadcast any new view to all alive nodes in the network. 
 
-A client SHALL broadcast any new view to all alive nodes in the network. When a
-new node comes online the current view SHALL be broadcasted to all nodes and no
-additional requests will be made by any client after reanimation until all
-replicas reply to their respective `/view` request with a 200 status code.
+When a new node comes online or there is a change in the shard membership of any
+node all nodes will remain alive, there will not be any partitions in the
+network, and no additional requests will be made by any client. These guarantees
+will last up until all replicas reply to their respective `/view` request with a
+200 status code. Notably these guarantees are not in effect when a node is
+removed from the network, when the IP address of nodes are changed, or when
+the order of nodes in their shard is changed.
 
-Once there has been at least N seconds of no partitions between all pairs of
-replicas (both nodes in the pair can message each another with a bounded latency
-of N/10 seconds) and no replicas in the view have crashed then all replicas MUST
-have already replied with a 200 status code once this condition is met. Notably
-the N seconds of no partitions between any pair might not happen at the same
-time as the other N seconds of no partitions between any pair.
+All replicas MUST always reply with a 200 status code within N seconds. 
 
-For example, in a three node view of nodes labeled A, B, and C, for the first N
-seconds after the view change, node A and B are not partitioned from one another
-while C is partitioned from both. Then in the next N seconds A and B are
-partitioned and C is not partitioned from either. So for this execution, within
-2N seconds of the view change, all nodes MUST have acknowledged the view with a
-200 status code.
-
-Furthermore, if only the IP addresses of the nodes changed, then all nodes MUST
-reply with a 200 status code within N seconds of the view change, regardless of
-the network topology.
 
 During a view change, any pending PUT request MAY become implicitly
 acknowledged, even without notifying the client of such an acknowledgement.
+
+Once all alive replicas have returned a 200 status code, all nodes within a
+shard MUST be strongly consistent with one another.
 
 ### Request
 
@@ -64,8 +55,20 @@ The HTTP request SHALL have the following HTTP headers:
 
 The body of the request SHALL be JSON in the following format:
 
+```ts
+{ [shard_id]: [ {"address": "196.168.0.1:8081", "id": 1} ] }
+```
+
+For example:
 ```json
-{ "defaultShard": [ {"address": "196.168.0.1:8081", "id": 1} ] }
+
+{ 
+  "shard1": [ 
+    {"address": "196.168.0.1:8081", "id": 1}, 
+    {"address": "196.168.0.2:8081", "id": 2}
+  ],
+  "shard2": [ {"address": "196.168.0.3:8081", "id": 3} ] 
+}
 ```
 
 Please note that the "id" field is an integer, not a string.

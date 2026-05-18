@@ -1,103 +1,54 @@
-# Assignment 3: Strongly Consistent Key/Value Store
+# Assignment 4: Strongly Consistent Sharded Key/Value Store
 
-Due at 11:40 AM on 2026-05-19.
+Due at 11:40 AM on 2026-05-28.
 
 
 ## Overview
 
-The goal of this assignment is to write an HTTP server that follows the
-[specification](./specification.md) that specifies a strongly consistent
-key/value store. For this assignment several servers will be run, servers might
-crash, partitions between servers might occur, and new servers might be
-introduced into the service. How your service MUST handle such interruptions *is
-not* specified; however, how your service MUST always behave (even under
-partitions/with crashes) *is* specified. It is up to your group to figure out
-how to satisfy the behavior specified even under partitions/crashes/new servers
-joining.
+The goal of this assignment is to extend [assignment 3](./assignment3.md) with
+sharding.
 
-The one nicety we guarantee is that once a server has crashed it is guaranteed
-that it SHALL NOT start again. This also means it is not useful to store your
-key/value pairs to disk.
+The entirety of assignment 3 still applies, with the added complexity of
+multiple shards specified in the view change. One advantage of sharding is that
+it can spread out load of the system across more machines, provided clients
+aren't exclusively writing to one key. In such a worst-case scenario, only one
+shard would be being used. The other advantage of sharding is that each replica
+only needs to store data from its shard instead of all replicas storing the
+entire key-value store. The last advantage is that even if one shard has a
+downed node, keys that are processed by the other shards can still be written to
+and read from.
 
-Note that a server partitioned from all other nodes until the end of time is
-indistinguishable from a crashed server and that there's no reliable way for a
-replica to tell whether a replica has crashed or is merely partitioned for
-forever.
+The disadvantage of shards is that it adds some complexity to your
+implementation. Most of this complexity will cluster around your view change
+logic since machines can change shards and some shards may even completely be
+removed. Additionally your logic about which node to redirect requests to will
+become more complex.
 
-## Strong Consistency Definition
+## Efficient Rearrangement of Keys
 
-Strong consistency informally guarantees that interacting with a service with
-multiple nodes MUST behave identically to interacting with a single node, even
-from the perspective of a global observer, with the one notable exception that
-the service MAY take an unbounded amount of time to reply to PUT and GET
-requests if necessary to uphold strong consistency.
+Approximately 5-10% of your grade for this assignment will be based on whether
+your implementation efficiently rearranges data across shards during a view
+change. For example, if there was four shards before the view change, each with
+one node, and five shards after the view change, still each with one node, then
+only about 20% of the keys should be moved across the shards. 
 
-Formally speaking, strong consistency guarantees that once any PUT request has
-been acknowledged, i.e. a view change or a key PUT, all replicas MUST be storing
-that value. Such a guarantee ensures that all acknowledged values are replicated
-on all replicas. Furthermore, all GET requests made to any node MUST return the
-event most recently acknowledged by any server. In other words, values for a
-given key are totally ordered based on the order your nodes acknowledge the
-values and you MUST return the latest PUT value for a given key.
+We'll have some tolerance in our testing of this. That said, a random shuffle of
+all keys in the above case would on average result in about 80% of the keys
+being moved which is easily noticeable by tracking the network bandwidth during
+a view change.
 
-## Sacrifices in Availability
+To make shuffling data around easier for this assignment, we guarantee that
+there will be no partitions across the network during a view change that changes
+the shard membership of a node to so that it's easier to efficiently sync data
+between shards.
 
-Ultimately the most available version of this assignment is arguably assignment
-1 because it always replies so long as that single server is alive.
+### Consistent Hashing
 
-For assignment 2 we reduced availability of GET requests only to the point
-necessary to uphold causal convergence by having the service occasionally return
-503 responses.
-
-For assignment 3 we further reduce availability such that if any server becomes
-partitioned from any other server then the service MAY stop serving PUT and GET
-requests altogether if necessary to ensure strong consistency. Notably in the
-case where all servers are alive but partitioned from one another, at least one
-node MUST still reply to GET requests. Ultimately, for assignment 3 you MUST
-only sacrifice availability if strictly necessary to uphold strong consistency.
-
-## Stateless Client
-
-In contrast to assignment 2, clients for assignment 3 are stateless and SHALL
-NOT keep track of cookies. This is intuitive because the service MUST behave the
-same as a single machine from the perspective of a global observer, with the
-notable exception of 307 responses.
-
-## 307 (Temporary Redirect) Responses
-
-A 307 HTTP response code means "Temporary Redirect" and is accompanied with a
-`Location` header [[mdn
-reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/307)].
-When a client gets a 307 HTTP response code that client SHALL re-send the
-request to the url in the Location header with the same method and body.
-
-If a replica replies to a request with a 307 response then the replica with the
-address in the `Location` header MUST NOT reply with a 307 response unless a
-client has sent a view change made since the redirect reply was made.
-
-Using this HTTP response code MAY prove useful in upholding strong consistency.
-
-## View Changes
-
-Without view changes, any server crashing could prevent future PUT requests from
-being made and furthermore a specific server crashing could prevent GET requests
-if the node responsible for handling GET requests was the one which crashed.
-Obviously servers MAY crash and ideally a system administrator can trivially
-reconfigure the cluster without the crashed node so that the cluster can
-continue to handle more requests.
-
-Ultimately the view change frees the service from ensuring strong consistency
-with nodes no longer in the view.
-
-Similarly, a system administrator might want to dynamically add and remove nodes
-from the cluster in order to dynamically scale the service in response to load.
-That said, we assume the system administrator is willing to wait up to N seconds
-for a view change to be processed, notably to allow the other replicas to bring
-any new node up to date. All replicas MAY stop replying to requests after a view
-change if necessary to uphold strong consistency.
-
-Be sure to read through the specification's rules around view changes, found in 
-the "PUT `/view`" section, very carefully!
+To accomplish this, consistent hashing is your friend! How to apply consistent
+hashing for sharding will likely be covered in class. Additionally it is covered
+in the [Chord paper by Stoica et.
+al.](https://dl.acm.org/doi/10.1145/964723.383071). Pay careful attention to
+section 4.2, especially regarding the use of virtual nodes. 
 
 ## Setup
 
@@ -108,18 +59,14 @@ NOT in the cse-138 Student Work group.**
 Then run the following:
 
 ```sh
-git checkout main
-# freeze the current commit corresponding to assignment 2 to its own branch
-git branch asgn2
+git checkout asgn3
 # rename asgn2 upstream to be called upstream-asgn2
-git remote rename upstream upstream-asgn2
+git remote rename upstream upstream-asgn3
 # set the upstream to be the assignment-2 spec
-git remote add upstream git@git.ucsc.edu:cse138/w26-assignment-3.git
-# go to the asgn1 branch
-git checkout asgn1
-# checkout from asgn1 to begin asgn3
-git checkout -b asgn3
-# pull in the assignment 3 spec into the asgn3 branch
+git remote add upstream git@git.ucsc.edu:cse138/w26-assignment-4.git
+# checkout from asgn3 to begin asgn4
+git checkout -b asgn4
+# pull in the assignment 4 spec into the asgn4 branch
 git fetch upstream main
 git rebase upstream/main
 git push --all
@@ -199,11 +146,13 @@ source .venv/bin/activate
 ENGINE=docker python -m provided_tests
 ```
 
-The provided tests are the exactly the same as the provided tests for assignment
-2 with the removal of the `bob_smells` test and the KvsMultiClient. This means
-creating partitions works the same way it did for assignment 2. Notably there is
-also the crash_machine() command within the ClusterConductor which will crash
-the node referenced and remove it from the view (but WILL NOT rebroadcast the view).
+The provided tests are exactly the same as the provided tests for assignment 3.
+Notably the test suite's ClusterConductor already has functions to add and
+remove nodes from shards and create new shards (add_shard, remove_shard,
+add_node_to_shard, remove_node_from_shard). That said, it might be worth writing
+additional utility functions to move a node between shards. Also the provided
+crash_machine function currently will only remove the crashed node from the
+"defaultShard" so you might want to avoid using that function.
 
 #### Suggested Expansions for the Test Suite
 
@@ -215,6 +164,9 @@ areas of expansion/modification for the provided test suite:
   handle new replicas coming online via view changes. You may need to poke
   around the testing utils to figure out how to kill servers and spawn new ones.
   Remember to broadcast the view when a new server is spawned!
+- Handle 307 redirects properly by replacing the IP address returned from the
+  server in the Location header into localhost:<PORT>, where PORT is the port of
+  the container which has the returned IP address.
 - Multithreading the test suite 
 - Trying out [property-based testing](https://en.wikipedia.org/wiki/Property_testing)
 
@@ -225,10 +177,10 @@ You must include a Dockerfile in the root of the repository which has the steps
 to build your container. 
 
 Your Dockerfile MUST build for both x86_64 and arm64 architectures. Most groups
-did this correctly for the first assignment and the submissions that did not do this
-correctly had a note left on their assignment about how to fix this. Generally
-unless you have a custom target in your Dockerfile everything should "just work"
-on both x86_64 and arm64.
+did this correctly for the first assignment and the submissions that did not do
+this correctly had a note left on their assignment about how to fix this.
+Generally unless you have a custom target in your Dockerfile everything should
+"just work" on both x86_64 and arm64.
 
 **Make sure you capitalize the "D" in Dockerfile filename!**
 
@@ -237,7 +189,8 @@ on both x86_64 and arm64.
 You must include a README.md file in the root of the repository which explains:
 1. your dependencies
 2. How you got new nodes up to speed
-3. How you chose which nodes to play which roles and what roles they played
+3. How you chose which keys map to which shards
+3. If you implemented consistent hashing, explain your implementation
 4. Your server's architecture (what directories/files do what)
 5. how you tested your code (cite your classmates here if you used their tests!). Note that you do not need to describe every test, but you should provide a high-level overview of your testing strategy.
 6. which group members did what
@@ -262,7 +215,7 @@ like so with all your groupmates' emails:
 ## Submissions
 
 To submit your repository, fill out [this google
-form](https://docs.google.com/forms/d/e/1FAIpQLSfevaURMsmUKdZUA3OVWXOH3tumSldrbDfHue2eibH0ScahAg/viewform?usp=publish-editor)
+form](https://docs.google.com/forms/d/e/1FAIpQLSeKb1GuKbCYwocyxqVN_N3uvVLD-TuU7qMK--WWZyN2XYxAQw/viewform?usp=publish-editor)
 with your repository URL and your commit hash. Please ensure you are signed into
 Google with your UCSC email, otherwise this form will be inaccessible. You are
 welcome to resubmit up until the due date. After the due date, resubmissions are
@@ -271,7 +224,7 @@ your grace day and may be docked credit for being late (see the syllabus for the
 late policy).
 
 Grades and feedback will be provided via git pushes to your repository via the 
-zejones-asgn3-feedback branch.
+zejones-asgn4-feedback branch.
 
 ## AI Policy
 
