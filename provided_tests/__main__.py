@@ -21,6 +21,11 @@ from .utils.test_case import TestCase
 from .utils.util import Logger, global_logger, log
 
 from .tests.strong_consistency import put_is_immediately_global
+from .tests.view_change import view_change
+from .tests.node_join_leave import node_join_leave
+from .tests.partitions import partitions_test
+from .tests.crash_scenarios import crash_scenarios
+from .tests.redirect_semantics import redirect_semantics
 
 # test functions
 # TODO: for parallel test runs, use generated group id
@@ -34,6 +39,11 @@ tests = [
     TestCase("put and get", put_and_get),
     TestCase("updates", update),
     TestCase("strong consistency", put_is_immediately_global),
+    TestCase("view change", view_change),
+    TestCase("node join-leave", node_join_leave),
+    TestCase("partitions", partitions_test),
+    TestCase("crash scenarios", crash_scenarios),
+    TestCase("redirect semantics", redirect_semantics),
 ]
 
 

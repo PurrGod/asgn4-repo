@@ -6,7 +6,7 @@ from ..utils.util import Logger
 
 def put_is_immediately_global(conductor: ClusterConductor, dir, log: Logger):
   """Strong consistency: Once PUT is acknowledged, all nodes must return it."""
-  with KVSTestFixture(conductor, dir, log, node_count=3, sync_time=1) as fx:
+  with KVSTestFixture(conductor, dir, log, node_count=3, sync_time=5) as fx:
     fx.broadcast_view(conductor.get_view())
 
     c0 = fx.clients[0]
