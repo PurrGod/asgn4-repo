@@ -1,6 +1,6 @@
 # Assignment 4: Strongly Consistent Sharded Key/Value Store
 
-Due at 11:40 AM on 2026-05-28.
+Due at 11:59 PM on 2026-05-29.
 
 
 ## Overview
