@@ -33,9 +33,8 @@ When a new node comes online or there is a change in the shard membership of any
 node all nodes will remain alive, there will not be any partitions in the
 network, and no additional requests will be made by any client. These guarantees
 will last up until all replicas reply to their respective `/view` request with a
-200 status code. Notably these guarantees are not in effect when a node is
-removed from the network, when the IP address of nodes are changed, or when
-the order of nodes in their shard is changed.
+200 status code. Notably these guarantees are not in effect when the IP address of 
+nodes are changed or when the order of nodes in their shard is changed.
 
 All replicas MUST always reply with a 200 status code within N seconds. 
 
