@@ -4,7 +4,7 @@
 from provided_tests.utils.containers import ClusterConductor
 from provided_tests.utils.kvs_api import KVSClient, KVSTestFixture
 from provided_tests.utils.util import Logger
-from tests.utils.redirect_client import RedirectAwareClient
+from ..utils.redirect_client import RedirectAwareClient
 
 
 def remove_non_primary(conductor: ClusterConductor, dir, log: Logger):

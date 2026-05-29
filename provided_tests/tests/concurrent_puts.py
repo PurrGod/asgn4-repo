@@ -8,7 +8,7 @@ import aiohttp
 from provided_tests.utils.containers import ClusterConductor
 from provided_tests.utils.kvs_api import KVSClient, KVSTestFixture
 from provided_tests.utils.util import Logger
-from tests.utils.redirect_client import RedirectAwareClient
+from ..utils.redirect_client import RedirectAwareClient
 
 
 async def async_put(client: RedirectAwareClient, key: str, value: str, timeout: float = 30.0):

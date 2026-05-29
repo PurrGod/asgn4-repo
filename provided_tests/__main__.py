@@ -13,23 +13,35 @@ import re
 import sys
 from datetime import datetime
 
-from .tests.hello import hello_cluster
-from .tests.put_and_get import put_and_get
-from .tests.update import update
 from .utils.containers import ClusterConductor, ContainerBuilder
 from .utils.test_case import TestCase
 from .utils.util import Logger, global_logger, log
 
-from .tests.strong_consistency import put_is_immediately_global
-from .tests.view_change import view_change
+from .tests.add_lowest_id_node import add_lowest_id_node
+from .tests.add_node import add_node
+from .tests.basic_view_change_under_partition import basic_view_change_under_partition
+from .tests.concurrent_puts import concurrent_puts
+from .tests.crash_scenarios import crash_scenarios
+from .tests.dropped_write_after_promotion import dropped_write_after_promotion
+from .tests.hello import hello_cluster
+from .tests.isolate_every_node import isolate_every_node
+from .tests.kill_primary import kill_primary
 from .tests.node_join_leave import node_join_leave
 from .tests.partitions import partitions_test
-from .tests.crash_scenarios import crash_scenarios
+from .tests.put_and_get import put_and_get
+from .tests.put_then_view_change import put_then_view_change
 from .tests.redirect_semantics import redirect_semantics
+from .tests.remove_non_primary import remove_non_primary
+from .tests.sc_failed_put import sc_failed_put
 from .tests.simple_partition import simple_partition
 from .tests.simple_reelection import simple_reelection
-from .tests.sc_failed_put import sc_failed_put
-from .tests.basic_view_change_under_partition import basic_view_change_under_partition
+from .tests.single_node_view import single_node_view
+from .tests.strong_consistency import put_is_immediately_global
+from .tests.successive_primaries import successive_primaries
+from .tests.timeout_then_put import timeout_then_put
+from .tests.update import update
+from .tests.view_change_unblocks_put import view_change_unblocks_put
+from .tests.view_change import view_change
 
 # test functions
 # TODO: for parallel test runs, use generated group id
@@ -51,7 +63,19 @@ tests = [
     TestCase("simple partition", simple_partition),
     TestCase("simple reelection", simple_reelection),
     TestCase("sc failed put", sc_failed_put),
-    TestCase("basic view change under partition", basic_view_change_under_partition)
+    TestCase("basic view change under partition", basic_view_change_under_partition),
+    TestCase("add lowest id node", add_lowest_id_node),
+    TestCase("add node", add_node),
+    TestCase("concurrent puts", concurrent_puts),
+    TestCase("dropped write after promotion", dropped_write_after_promotion),
+    TestCase("isolate every node", isolate_every_node),
+    TestCase("kill primary", kill_primary),
+    TestCase("put then view change", put_then_view_change),
+    TestCase("remove non primary", remove_non_primary),
+    TestCase("successive primaries", successive_primaries),
+    TestCase("timeout then put", timeout_then_put),
+    TestCase("single node view", single_node_view),
+    TestCase("view change unblocks put", view_change_unblocks_put)
 ]
 
 

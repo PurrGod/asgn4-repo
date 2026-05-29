@@ -6,7 +6,7 @@ import time
 from provided_tests.utils.containers import ClusterConductor
 from provided_tests.utils.kvs_api import KVSTestFixture, REQUEST_TIMEOUT_STATUS_CODE
 from provided_tests.utils.util import Logger
-from tests.utils.redirect_client import RedirectAwareClient
+from ..utils.redirect_client import RedirectAwareClient
 
 
 def view_change_unblocks_put(conductor: ClusterConductor, dir, log: Logger):
