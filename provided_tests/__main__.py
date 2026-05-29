@@ -26,6 +26,10 @@ from .tests.node_join_leave import node_join_leave
 from .tests.partitions import partitions_test
 from .tests.crash_scenarios import crash_scenarios
 from .tests.redirect_semantics import redirect_semantics
+from .tests.simple_partition import simple_partition
+from .tests.simple_reelection import simple_reelection
+from .tests.sc_failed_put import sc_failed_put
+from .tests.basic_view_change_under_partition import basic_view_change_under_partition
 
 # test functions
 # TODO: for parallel test runs, use generated group id
@@ -44,6 +48,10 @@ tests = [
     TestCase("partitions", partitions_test),
     TestCase("crash scenarios", crash_scenarios),
     TestCase("redirect semantics", redirect_semantics),
+    TestCase("simple partition", simple_partition),
+    TestCase("simple reelection", simple_reelection),
+    TestCase("sc failed put", sc_failed_put),
+    TestCase("basic view change under partition", basic_view_change_under_partition)
 ]
 
 
