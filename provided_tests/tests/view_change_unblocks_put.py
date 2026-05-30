@@ -8,7 +8,6 @@ from provided_tests.utils.kvs_api import KVSTestFixture, REQUEST_TIMEOUT_STATUS_
 from provided_tests.utils.util import Logger
 from ..utils.redirect_client import RedirectAwareClient
 
-
 def view_change_unblocks_put(conductor: ClusterConductor, dir, log: Logger):
     with KVSTestFixture(conductor, dir, log, node_count=3) as fx:
         clients = [RedirectAwareClient(c.base_url, conductor) for c in fx.clients]
@@ -39,7 +38,7 @@ def view_change_unblocks_put(conductor: ClusterConductor, dir, log: Logger):
         node0 = conductor.get_node(0)
         node1 = conductor.get_node(1)
         two_node_view = {"defaultShard": [node0.get_view(), node1.get_view()]}
-        for i in (0, 1):
+        for i in (0, 1, 2):
             r = fx.clients[i].send_view(two_node_view)
             assert r.status_code == 200, (
                 f"node {i} shrink view ack: {r.status_code}"

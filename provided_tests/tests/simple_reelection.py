@@ -1,7 +1,7 @@
 import requests
 import time
 from ..utils.containers import ClusterConductor
-from ..utils.kvs_api import KVSTestFixture
+from ..utils.kvs_api import KVSTestFixture, REQUEST_TIMEOUT_STATUS_CODE
 from ..utils.util import Logger
 
 
@@ -26,10 +26,14 @@ def simple_reelection(conductor: ClusterConductor, dir, log: Logger):
 
         # writes should be refused to maintain strong consistency
         r = c0.put("a", "2")
-        assert r.status_code == 503, f"expected 503 on isolated primary, got {r.status_code}"
+        assert r.status_code == REQUEST_TIMEOUT_STATUS_CODE, (
+            f"PUT should have timed out (408), got {r.status_code}"
+        )
 
         r = c1.put("a", "2")
-        assert r.status_code == 503, f"expected 503 on partitioned follower, got {r.status_code}"
+        assert r.status_code == REQUEST_TIMEOUT_STATUS_CODE, (
+            f"PUT should have timed out (408), got {r.status_code}"
+        )
 
         # send view so that only node 1 is the only node in view
         old_view = conductor.get_view()

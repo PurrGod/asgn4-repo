@@ -1,7 +1,7 @@
 import requests
 import time
 from ..utils.containers import ClusterConductor
-from ..utils.kvs_api import KVSTestFixture
+from ..utils.kvs_api import KVSTestFixture, REQUEST_TIMEOUT_STATUS_CODE
 from ..utils.util import Logger
 
 
@@ -26,7 +26,9 @@ def sc_failed_put(conductor: ClusterConductor, dir, log: Logger):
         time.sleep(1)
 
         r = c1.put("a", "2")
-        assert r.status_code == 503, f"expected 503 on primary with isolated backup, got {r.status_code}"
+        assert r.status_code == REQUEST_TIMEOUT_STATUS_CODE, (
+            f"PUT should have timed out (408), got {r.status_code}"
+        )
 
         r = c0.get("a")
         assert r.status_code == 200, f"expected 200 on only node in updated view get, got {r.status_code}"
