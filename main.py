@@ -30,7 +30,7 @@ store_clocks: Dict[str, int] = {}
 current_view: Dict[str, List[Dict[str, Any]]] = {"defaultShard": []}
 view_lock = asyncio.Lock()
 
-put_locks = Dict[str, asyncio.Lock] = {}
+put_locks: Dict[str, asyncio.Lock] = {}
 
 # Timeout for inter-node communication (N seconds from environment)
 TIMEOUT = float(os.getenv("N", "5")) * 0.1 # 0.1 taken from latency spec
@@ -261,25 +261,31 @@ async def view(request: Request):
         
         my_addr = get_my_address(current_view)
 
-        # Find nodes we can update from that are in both old and current view
-        other_nodes = [n for n in get_other_nodes(current_view) if n.get("id") in node_ids_old]
-        
-        # If we are a new node, get store from a peer
+        # Determine if this node was already in the cluster before this view change
         was_in_old = False
         if old_view and "defaultShard" in old_view:
-            was_in_old = any(n.get("address") == my_addr for n in old_view["defaultShard"])
-            
-        if not was_in_old and my_addr and other_nodes:
-            peer_addr = other_nodes[0]["address"]
-            try:
-                async with httpx.AsyncClient(timeout=httpx.Timeout(TIMEOUT)) as client:
-                    resp = await client.get(f"http://{peer_addr}/internal/store")
-                    if resp.status_code == 200:
-                        peer_store = resp.json()
-                        async with store_lock:
-                            store.update(peer_store)
-            except Exception as e:
-                pass
+            old_ids = {n.get("id") for n in old_view["defaultShard"]}
+            identifier = os.getenv("NODE_IDENTIFIER")
+            if identifier:
+                try:
+                    was_in_old = int(identifier) in old_ids
+                except (ValueError, TypeError):
+                    pass
+
+        # If we are a new node, download the full store from any available peer
+        if not was_in_old and my_addr:
+            available_peers = get_other_nodes(current_view)
+            if available_peers:
+                peer_addr = available_peers[0]["address"]
+                try:
+                    async with httpx.AsyncClient(timeout=httpx.Timeout(TIMEOUT)) as client:
+                        resp = await client.get(f"http://{peer_addr}/internal/store")
+                        if resp.status_code == 200:
+                            peer_store = resp.json()
+                            async with store_lock:
+                                store.update(peer_store)
+                except Exception:
+                    pass
         
         # If there is a new primary and we aren't it, update our values
         primary_addr = get_primary_address(current_view)
