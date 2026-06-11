@@ -17,31 +17,25 @@ from .utils.containers import ClusterConductor, ContainerBuilder
 from .utils.test_case import TestCase
 from .utils.util import Logger, global_logger, log
 
-from .tests.add_lowest_id_node import add_lowest_id_node
-from .tests.add_node import add_node
-from .tests.basic_view_change_under_partition import basic_view_change_under_partition
-from .tests.concurrent_puts import concurrent_puts
-from .tests.crash_scenarios import crash_scenarios
-from .tests.dropped_write_after_promotion import dropped_write_after_promotion
-from .tests.hello import hello_cluster
-from .tests.isolate_every_node import isolate_every_node
-from .tests.kill_primary import kill_primary
-from .tests.node_join_leave import node_join_leave
-from .tests.partitions import partitions_test
-from .tests.put_and_get import put_and_get
-from .tests.put_then_view_change import put_then_view_change
-from .tests.redirect_semantics import redirect_semantics
-from .tests.remove_non_primary import remove_non_primary
-from .tests.sc_failed_put import sc_failed_put
-from .tests.simple_partition import simple_partition
-from .tests.simple_reelection import simple_reelection
-from .tests.single_node_view import single_node_view
-from .tests.strong_consistency import put_is_immediately_global
-from .tests.successive_primaries import successive_primaries
-from .tests.timeout_then_put import timeout_then_put
-from .tests.update import update
-from .tests.view_change_unblocks_put import view_change_unblocks_put
-from .tests.view_change import view_change
+from .tests.Asgn4_tests.PUT_data_before_PUT_view_should_return_500 import test_put_data_before_view_returns_500
+from .tests.Asgn4_tests.put_replicates_only_inside_owning_shard import test_put_replicates_only_inside_owning_shard
+from .tests.Asgn4_tests.test_efficient_rekey_consistent_hashing import test_efficient_rekey_consistent_hashing
+from .tests.Asgn4_tests.test_efficient_rekey_shard_removal import test_efficient_rekey_on_shard_removal
+from .tests.Asgn4_tests.test_get_redirects_to_owning_shard import test_get_redirects_to_owning_shard
+from .tests.Asgn4_tests.test_keys_distributed_across_shards import test_keys_distributed_across_shards
+from .tests.Asgn4_tests.test_missing_key_redirects_to_owning_shard import test_missing_key_redirects_to_owning_shard
+from .tests.Asgn4_tests.test_multishard_view_install import test_multishard_view_install
+from .tests.Asgn4_tests.test_new_node_onboarding import test_new_node_onboarding
+from .tests.Asgn4_tests.test_node_moves_between_shards import test_node_moves_between_shards
+from .tests.Asgn4_tests.test_old_owner_redirects_after_rekey import test_old_owner_redirects_after_rekey
+from .tests.Asgn4_tests.test_put_completes_when_backup_crashed import test_put_completes_when_backup_crashed
+from .tests.Asgn4_tests.test_put_completes_when_backup_partitioned import test_put_completes_when_backup_partitioned
+from .tests.Asgn4_tests.test_put_redirects_to_owning_shard import test_put_redirects_to_owning_shard
+from .tests.Asgn4_tests.test_replication_is_synchronous import test_replication_is_synchronous
+from .tests.Asgn4_tests.test_shard_isolation_under_partition import test_shard_isolation_under_partition
+from .tests.Asgn4_tests.test_view_accepts_arbitrary_shard_names import test_view_accepts_arbitrary_shard_names
+from .tests.Asgn4_tests.test_within_shard_replication_failover import test_within_shard_replication_failover
+from .tests.Asgn4_tests.test_writes_not_wedged_after_backup_crash import test_writes_not_wedged_after_backup_crash
 
 # test functions
 # TODO: for parallel test runs, use generated group id
@@ -51,31 +45,25 @@ TEST_GROUP_ID = "asgn1"
 
 # run test set
 tests = [
-    TestCase("hello cluster", hello_cluster),
-    TestCase("put and get", put_and_get),
-    TestCase("updates", update),
-    TestCase("strong consistency", put_is_immediately_global),
-    TestCase("view change", view_change),
-    TestCase("node join-leave", node_join_leave),
-    TestCase("partitions", partitions_test),
-    TestCase("crash scenarios", crash_scenarios),
-    TestCase("redirect semantics", redirect_semantics),
-    TestCase("simple partition", simple_partition),
-    TestCase("simple reelection", simple_reelection),
-    TestCase("sc failed put", sc_failed_put),
-    TestCase("basic view change under partition", basic_view_change_under_partition),
-    TestCase("add lowest id node", add_lowest_id_node),
-    TestCase("add node", add_node),
-    TestCase("concurrent puts", concurrent_puts),
-    TestCase("dropped write after promotion", dropped_write_after_promotion),
-    TestCase("isolate every node", isolate_every_node),
-    TestCase("kill primary", kill_primary),
-    TestCase("put then view change", put_then_view_change),
-    TestCase("remove non primary", remove_non_primary),
-    TestCase("successive primaries", successive_primaries),
-    TestCase("timeout then put", timeout_then_put),
-    TestCase("single node view", single_node_view),
-    TestCase("view change unblocks put", view_change_unblocks_put)
+    TestCase("put data before view returns 500", test_put_data_before_view_returns_500),
+    TestCase("put replicates only inside owning shard", test_put_replicates_only_inside_owning_shard),
+    TestCase("efficient rekey consistent hashing", test_efficient_rekey_consistent_hashing),
+    TestCase("efficient rekey shard removal", test_efficient_rekey_on_shard_removal),
+    TestCase("get redirects to owning shard", test_get_redirects_to_owning_shard),
+    TestCase("keys distributed across shards", test_keys_distributed_across_shards),
+    TestCase("missing key redirects to owning shard", test_missing_key_redirects_to_owning_shard),
+    TestCase("multishard view install", test_multishard_view_install),
+    TestCase("new node onboarding", test_new_node_onboarding),
+    TestCase("node moves between shards", test_node_moves_between_shards),
+    TestCase("old owner redirects after rekey", test_old_owner_redirects_after_rekey),
+    TestCase("put completes when backup crashed", test_put_completes_when_backup_crashed),
+    TestCase("put completes when backup partitioned", test_put_completes_when_backup_partitioned),
+    TestCase("put redirects to owning shard", test_put_redirects_to_owning_shard),
+    TestCase("replication is synchronous", test_replication_is_synchronous),
+    TestCase("shard isolation under partition", test_shard_isolation_under_partition),
+    TestCase("view accepts arbitrary shard names", test_view_accepts_arbitrary_shard_names),
+    TestCase("within shard replication failover", test_within_shard_replication_failover),
+    TestCase("writes not wedged after backup crash", test_writes_not_wedged_after_backup_crash),
 ]
 
 
