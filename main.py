@@ -534,11 +534,7 @@ async def put_data(
 
         # ── No view received: standalone single-node mode ─────────────────
         if view_snap is None:
-            if key not in put_locks:
-                put_locks[key] = asyncio.Lock()
-            value = (await request.body()).decode("utf-8")
-            await local_put(key, value)
-            return Response(status_code=200)
+            return Response(status_code=500)
 
         # ── Cross-shard routing (my_shard may be None for excluded nodes) ─
         my_shard = get_my_shard(view_snap)
@@ -584,10 +580,7 @@ async def get_data(key: str = Path(..., pattern="^[0-9a-zA-Z-]{0,128}$")):
 
         # ── No view received: standalone single-node mode ─────────────────
         if view_snap is None:
-            value = await local_get(key)
-            if value is None:
-                return Response(status_code=404, content="")
-            return Response(content=value, media_type="text/plain", status_code=200)
+            return Response(status_code=500)
 
         # ── Cross-shard routing (my_shard may be None for excluded nodes) ─
         my_shard = get_my_shard(view_snap)
