@@ -350,9 +350,8 @@ async def get_internal_keys():
     """Return the keys currently held in this node's local store (used by tests)."""
     try:
         async with store_lock:
-            # The test parses the JSON and calls .keys() on it, 
-            # so we return a dictionary mapping keys to empty strings.
-            return JSONResponse(content={k: "" for k in store.keys()})
+            # Return the actual store dictionary so tests can verify the values
+            return JSONResponse(content=dict(store))
     except Exception:
         return Response(status_code=500)
 
