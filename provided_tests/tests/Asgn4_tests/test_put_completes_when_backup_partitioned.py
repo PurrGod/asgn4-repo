@@ -19,7 +19,8 @@ def test_put_completes_when_backup_partitioned(conductor: ClusterConductor, dir,
         r = primary.put("seed", "ok")
         assert r.status_code == 200, f"seed PUT failed: {r.status_code}"
 
-        conductor.partition_nodes([0], [1])
+        conductor.partition([0], "part0")
+        conductor.partition([1], "part1")
 
         start = time.time()
         status = None
@@ -50,7 +51,7 @@ def test_put_completes_when_backup_partitioned(conductor: ClusterConductor, dir,
             f"primary did not commit while partitioned: status={r.status_code} body='{r.text}'"
         )
 
-        conductor.heal_partition()
+        conductor.partition([0, 1], "base")
         time.sleep(1)
         conductor.dump_all_container_logs(dir)
 

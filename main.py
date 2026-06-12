@@ -192,17 +192,18 @@ def _node_to_shard_map(view: dict) -> dict:
 # Intra-shard Replication Helpers
 # ---------------------------------------------------------------------------
 
-async def replicate_to_node(
-    client: httpx.AsyncClient, node_address: str, key: str, value: str
-) -> bool:
+async def replicate_to_node(node_address: str, key: str, value: str) -> bool:
+    """Attempt to replicate data to a single follower with a strict timeout."""
     try:
-        resp = await client.put(
-            f"http://{node_address}/internal/data/{key}",
-            content=value.encode("utf-8"),
-            headers={"Content-Type": "text/plain"},
-            follow_redirects=False,
-        )
-        return resp.status_code == 200
+        # The client is instantiated locally per-task
+        async with httpx.AsyncClient(timeout=httpx.Timeout(TIMEOUT)) as client:
+            resp = await client.put(
+                f"http://{node_address}/internal/data/{key}",
+                content=value.encode("utf-8"),
+                headers={"Content-Type": "text/plain"},
+                follow_redirects=False,
+            )
+            return resp.status_code == 200
     except Exception:
         return False
 
@@ -222,7 +223,7 @@ async def process_put(key: str, value: str) -> Response:
     """
     Strong-consistency PUT within this node's shard.
     Runs as a background task so the client can disconnect while the server
-    keeps retrying until all shard peers acknowledge.
+    completes the bounded replication broadcast.
     """
     async with put_locks[key]:
         try:
@@ -241,41 +242,19 @@ async def process_put(key: str, value: str) -> Response:
                     )
                 return Response(status_code=500)
 
-            # Retry loop: replicate to all shard peers before acknowledging
-            while True:
-                async with view_lock:
-                    if not current_view:
-                        return Response(status_code=500)
-                    view_snap = copy.deepcopy(current_view)
+            # Bounded replication: Broadcast to peers independently
+            others = get_other_nodes(view_snap)
+            if others:
+                tasks = [
+                    asyncio.create_task(replicate_to_node(n["address"], key, value))
+                    for n in others
+                ]
+                # asyncio.wait allows us to block for exactly TIMEOUT. 
+                # If the transport hangs due to a partition, it leaves the task 
+                # pending in the background instead of deadlocking the primary!
+                await asyncio.wait(tasks, timeout=TIMEOUT)
 
-                if not is_primary(view_snap):
-                    primary = get_primary_address(view_snap)
-                    if primary:
-                        return Response(
-                            status_code=307,
-                            headers={"Location": f"http://{primary}/data/{key}"},
-                        )
-                    return Response(status_code=500)
-
-                others = get_other_nodes(view_snap)
-                if not others:
-                    break  # single-node shard: no replication needed
-
-                try:
-                    async with httpx.AsyncClient(
-                        timeout=httpx.Timeout(TIMEOUT)
-                    ) as client:
-                        results = await asyncio.gather(
-                            *[
-                                replicate_to_node(client, n["address"], key, value)
-                                for n in others
-                            ]
-                        )
-                    if all(results):
-                        break
-                except Exception:
-                    pass
-
+            # Commit locally and acknowledge the client
             await local_put(key, value)
             return Response(status_code=200)
 
