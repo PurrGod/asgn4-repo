@@ -344,6 +344,18 @@ async def get_internal_values(request: Request):
 # Public Endpoints
 # ---------------------------------------------------------------------------
 
+
+@app.get("/internal/keys")
+async def get_internal_keys():
+    """Return the keys currently held in this node's local store (used by tests)."""
+    try:
+        async with store_lock:
+            # The test parses the JSON and calls .keys() on it, 
+            # so we return a dictionary mapping keys to empty strings.
+            return JSONResponse(content={k: "" for k in store.keys()})
+    except Exception:
+        return Response(status_code=500)
+
 @app.get("/ping")
 async def ping():
     return Response(status_code=200)
@@ -420,10 +432,11 @@ async def view_change(request: Request):
                 except Exception:
                     pass
 
-        # ── CASE B: Cross-shard key redistribution ───────────────────────
-        # Only the primary of each shard performs the push (followers receive
-        # the batch directly, avoiding double-sends).
-        if shard_structure_changed and new_my_shard is not None and is_primary(new_view):
+        #   ── CASE B: Cross-shard key redistribution ───────────────────────
+        # Only the primary of each shard IN THE OLD VIEW performs the push.
+        # We remove the new_my_shard restriction so nodes being removed from 
+        # the cluster gracefully offload their data to the surviving shards.
+        if shard_structure_changed and old_view and is_primary(old_view):
             new_ring, new_sorted = build_ring(new_view)
 
             # Collect keys that must move to other shards
@@ -433,8 +446,13 @@ async def view_change(request: Request):
             async with store_lock:
                 for k, v in store.items():
                     dest = key_to_shard(k, new_ring, new_sorted)
-                    if dest != new_my_shard:
+                    # Push the key if its new destination is different from our new assignment.
+                    # (If we are removed from the view, new_my_shard is None, so dest != None is True).
+                    if dest is not None and dest != new_my_shard:
                         keys_to_push.setdefault(dest, {})[k] = v
+                        keys_to_delete.append(k)
+                    elif dest is None:
+                        # Edge case fallback: all shards were removed
                         keys_to_delete.append(k)
 
             if keys_to_push:
