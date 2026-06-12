@@ -596,15 +596,6 @@ async def get_data(key: str = Path(..., pattern="^[0-9a-zA-Z-]{0,128}$")):
                 headers={"Location": f"http://{primary}/data/{key}"},
             )
 
-        if not is_primary(view_snap):
-            primary = get_primary_address(view_snap)
-            if primary:
-                return Response(
-                    status_code=307,
-                    headers={"Location": f"http://{primary}/data/{key}"},
-                )
-            return Response(status_code=500)
-
         value = await local_get(key)
         if value is None:
             return Response(status_code=404, content="")
